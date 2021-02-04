@@ -1,0 +1,4 @@
+*~
+*.mexw64
+*.mexw32
+results/*

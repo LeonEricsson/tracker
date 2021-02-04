@@ -1,0 +1,6 @@
+[submodule "external/toolbox"]
+	path = external/toolbox
+	url = https://github.com/pdollar/toolbox.git
+[submodule "external/matconvnet"]
+	path = external/matconvnet
+	url = https://github.com/vlfeat/matconvnet.git
