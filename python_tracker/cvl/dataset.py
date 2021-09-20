@@ -277,19 +277,18 @@ class OnlineTrackingBenchmark:
             union = gt_box.union(tracked_boxes[frame_idx])
             intersection = gt_box.intersection(tracked_boxes[frame_idx])
             iou.append(intersection/union)
-
         return iou
 
-    def calculate_auc(self, sequence_idx, tracked_boxes):
-        seq_name = self.sequences[sequence_idx].sequence_name
-        per_frame_iou = self.calculate_per_frame_iou(sequence_idx, tracked_boxes)
-        auc = np.cumsum(per_frame_iou)
-        return auc
+    def success_rate(self, per_sequence_ious, num_thresholds=20):
+        overlap_thresholds = np.linspace(0,1,num=num_thresholds)
+        success_rate = np.zeros(num_thresholds)
+        for sequence_ious in per_sequence_ious:
+            for i in range(num_thresholds):
+                success_rate[i] += (sequence_ious>overlap_thresholds[i]).mean()
+        success_rate /= len(per_sequence_ious)
+        return overlap_thresholds, success_rate
 
-    def calculate_performance(self, per_sequence_performance):
-        per_seq_auc = []
-        for sequence_idx in per_sequence_performance:
-            seq_tracker_output = per_sequence_performance[sequence_idx]
-            per_seq_auc.append(self.calculate_auc(sequence_idx, seq_tracker_output))
-
-        return per_seq_auc
+    def auc(self, success_rate):
+        """ Calculate the Area Under Curve of the success_rate, note that this works since the thresholds are between [0,1]
+        """
+        return success_rate.mean()
