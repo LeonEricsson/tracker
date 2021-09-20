@@ -2,3 +2,6 @@
 *.mexw64
 *.mexw32
 results/*
+*.idea
+*.vscode
+*__pycache__

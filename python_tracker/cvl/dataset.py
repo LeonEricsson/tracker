@@ -92,7 +92,7 @@ class BoundingBox(object):
         assert self.width > 0
         assert self.height > 0
     
-    def intersection_box(self, other):
+    def intersection(self, other):
         """Returns the intersection bb with other box, if it does not exist a box of zero area is returned"""
         x1 = self.xpos
         x2 = other.xpos
@@ -114,31 +114,16 @@ class BoundingBox(object):
         iw = ixx - ix
         ih = iyy - iy
 
-        if iw < 0:
-            ix = 0
-            iy = 0
-            iw = 0
-            ih = 0
+        if iw < 0 or ih < 0:
+            return 0.
+        else:
+            return iw*ih
 
-        if ih < 0:
-            ix = 0
-            iy = 0
-            ih = 0
-            ih = 0
-
-        return BoundingBox('tl-size', ix, iy, iw, ih)
-
-    def union_box(self, other):
-        """Returns the bounding box covering both this and the other"""
-        x1 = min(self.xpos, other.xpos)
-        y1 = min(self.ypos, other.ypos)
-        x2 = max(x1 + self.width, x1 + other.width)
-        y2 = max(y1 + self.height, y1 + other.height)
-        
-        width = x2 - x1
-        height = y2 - y1
-
-        return BoundingBox('tl-size',x1,y1,width,height)
+    def union(self, other):
+        """Returns the area covering both this and the other"""
+        u = self.area()+other.area()-self.intersection(other)
+        assert u > 0
+        return u
 
     def build_BoundingBox2d(self, bb2d):
         self.xpos = bb2d.X()
@@ -289,9 +274,9 @@ class OnlineTrackingBenchmark:
         iou = []
         for frame_idx, frame_data in enumerate(self.sequences[sequence_idx]):
             gt_box = frame_data['bounding_box']
-            union = gt_box.union_box(tracked_boxes[frame_idx])
-            intersection = gt_box.intersection_box(tracked_boxes[frame_idx])
-            iou.append(intersection.area() / union.area())
+            union = gt_box.union(tracked_boxes[frame_idx])
+            intersection = gt_box.intersection(tracked_boxes[frame_idx])
+            iou.append(intersection/union)
 
         return iou
 
