@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.fftpack import fft2, ifft2, fftshift, ifftshift
 from .image_io import crop_patch
-
+from copy import copy
 
 class NCCTracker:
 
@@ -13,13 +13,16 @@ class NCCTracker:
         self.region_center = None
         self.learning_rate = learning_rate
 
+    def get_region(self):
+        return copy(self.region)
+
     def crop_patch(self, image):
         region = self.region
         return crop_patch(image, region)
 
     def start(self, image, region):
         assert len(image.shape) == 2, "NCC is only defined for grayscale images"
-        self.region = region
+        self.region = copy(region)
         self.region_shape = (region.height, region.width)
         self.region_center = (region.height // 2, region.width // 2)
         patch = self.crop_patch(image)

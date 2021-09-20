@@ -2,7 +2,7 @@
 
 from cvl.dataset import OnlineTrackingBenchmark
 
-otb = OnlineTrackingBenchmark("/media/gusha40/smaugsung/TSBB17/otb_mini")
+otb = OnlineTrackingBenchmark("/courses/TSBB19/otb_mini")
 
 #otb[16].list_frames()
 #otb[16].check_frames()

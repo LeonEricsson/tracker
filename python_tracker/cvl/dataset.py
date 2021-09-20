@@ -92,7 +92,7 @@ class BoundingBox(object):
         assert self.width > 0
         assert self.height > 0
     
-    def intersection_box(self, other):
+    def intersection(self, other):
         """Returns the intersection bb with other box, if it does not exist a box of zero area is returned"""
         x1 = self.xpos
         x2 = other.xpos
@@ -114,31 +114,16 @@ class BoundingBox(object):
         iw = ixx - ix
         ih = iyy - iy
 
-        if iw < 0:
-            ix = 0
-            iy = 0
-            iw = 0
-            ih = 0
+        if iw < 0 or ih < 0:
+            return 0.
+        else:
+            return iw*ih
 
-        if ih < 0:
-            ix = 0
-            iy = 0
-            ih = 0
-            ih = 0
-
-        return BoundingBox('tl-size', ix, iy, iw, ih)
-
-    def union_box(self, other):
-        """Returns the bounding box covering both this and the other"""
-        x1 = min(self.xpos, other.xpos)
-        y1 = min(self.ypos, other.ypos)
-        x2 = max(x1 + self.width, x1 + other.width)
-        y2 = max(y1 + self.height, y1 + other.height)
-        
-        width = x2 - x1
-        height = y2 - y1
-
-        return BoundingBox('tl-size',x1,y1,width,height)
+    def union(self, other):
+        """Returns the area covering both this and the other"""
+        u = self.area()+other.area()-self.intersection(other)
+        assert u > 0
+        return u
 
     def build_BoundingBox2d(self, bb2d):
         self.xpos = bb2d.X()
@@ -289,22 +274,21 @@ class OnlineTrackingBenchmark:
         iou = []
         for frame_idx, frame_data in enumerate(self.sequences[sequence_idx]):
             gt_box = frame_data['bounding_box']
-            union = gt_box.union_box(tracked_boxes[frame_idx])
-            intersection = gt_box.intersection_box(tracked_boxes[frame_idx])
-            iou.append(intersection.area() / union.area())
-
+            union = gt_box.union(tracked_boxes[frame_idx])
+            intersection = gt_box.intersection(tracked_boxes[frame_idx])
+            iou.append(intersection/union)
         return iou
 
-    def calculate_auc(self, sequence_idx, tracked_boxes):
-        seq_name = self.sequences[sequence_idx].sequence_name
-        per_frame_iou = self.calculate_per_frame_iou(sequence_idx, tracked_boxes)
-        auc = np.cumsum(per_frame_iou)
-        return auc
+    def success_rate(self, per_sequence_ious, num_thresholds=20):
+        overlap_thresholds = np.linspace(0,1,num=num_thresholds)
+        success_rate = np.zeros(num_thresholds)
+        for sequence_ious in per_sequence_ious:
+            for i in range(num_thresholds):
+                success_rate[i] += (sequence_ious>overlap_thresholds[i]).mean()
+        success_rate /= len(per_sequence_ious)
+        return overlap_thresholds, success_rate
 
-    def calculate_performance(self, per_sequence_performance):
-        per_seq_auc = []
-        for sequence_idx in per_sequence_performance:
-            seq_tracker_output = per_sequence_performance[sequence_idx]
-            per_seq_auc.append(self.calculate_auc(sequence_idx, seq_tracker_output))
-
-        return per_seq_auc
+    def auc(self, success_rate):
+        """ Calculate the Area Under Curve of the success_rate, note that this works since the thresholds are between [0,1]
+        """
+        return success_rate.mean()
