@@ -93,7 +93,7 @@ class BoundingBox(object):
         assert self.height > 0
     
     def intersection(self, other):
-        """Returns the intersection bb with other box, if it does not exist a box of zero area is returned"""
+        """Returns the area of intersection with other box"""
         x1 = self.xpos
         x2 = other.xpos
         y1 = self.ypos
@@ -289,6 +289,6 @@ class OnlineTrackingBenchmark:
         return overlap_thresholds, success_rate
 
     def auc(self, success_rate):
-        """ Calculate the Area Under Curve of the success_rate, note that this works since the thresholds are between [0,1]
+        """ Calculate the Area Under Curve of the success_rate. Note: this function assumes that thresholds are uniform between [0,1]
         """
         return success_rate.mean()
