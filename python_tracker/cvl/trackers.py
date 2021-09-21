@@ -16,33 +16,30 @@ class NCCTracker:
     def get_region(self):
         return copy(self.region)
 
-    def crop_patch(self, image):
+    def get_normalized_patch(self, image):
         region = self.region
-        return crop_patch(image, region)
+        patch = crop_patch(image, region)
+        patch = patch / 255
+        patch = patch - np.mean(patch)
+        patch = patch / np.std(patch)
+        return patch
 
     def start(self, image, region):
         assert len(image.shape) == 2, "NCC is only defined for grayscale images"
         self.region = copy(region)
         self.region_shape = (region.height, region.width)
         self.region_center = (region.height // 2, region.width // 2)
-        patch = self.crop_patch(image)
-
-        patch = patch/255
-        patch = patch - np.mean(patch)
-        patch = patch / np.std(patch)
-
+        patch = self.get_normalized_patch(image)
         self.template = fft2(patch)
 
     def detect(self, image):
         assert len(image.shape) == 2, "NCC is only defined for grayscale images"
-        patch = self.crop_patch(image)
-        patch = patch / 255
-        patch = patch - np.mean(patch)
-        patch = patch / np.std(patch)
+        patch = self.get_normalized_patch(image)
+        
         patchf = fft2(patch)
 
         responsef = self.template * np.conj(patchf)
-        response = ifft2(responsef)
+        response = ifft2(responsef).real
 
         r, c = np.unravel_index(np.argmax(response), response.shape)
 
@@ -55,13 +52,10 @@ class NCCTracker:
         self.region.xpos += c_offset
         self.region.ypos += r_offset
 
-        return self.region
+        return self.get_region()
 
     def update(self, image, lr=0.1):
         assert len(image.shape) == 2, "NCC is only defined for grayscale images"
-        patch = self.crop_patch(image)
-        patch = patch / 255
-        patch = patch - np.mean(patch)
-        patch = patch / np.std(patch)
+        patch = self.get_normalized_patch(image)
         patchf = fft2(patch)
         self.template = self.template * (1 - lr) + patchf * lr
