@@ -22,13 +22,13 @@ COLORNAMES_TABLE = scipy.io.loadmat(COLORNAMES_TABLE_PATH)['w2c']
 
 
 def colornames_image(image, mode='probability'):
-    """Apply color names to an image
+    """Compute a color names image from an RGB image
     Parameters
     --------------
     image : array_like
-        The input image array (RxC)
+        The input image array (RxCx3)
     mode : str
-        If 'index' then it returns an image where each element is the corresponding color name label.
+        If 'index' then it returns an RxC image where each element is the corresponding color name label.
         If 'probability', then the returned image has size RxCx11 where the last dimension are the probabilities for each
         color label.
         The corresponding human readable name of each label is found in the `COLOR_NAMES` list.
