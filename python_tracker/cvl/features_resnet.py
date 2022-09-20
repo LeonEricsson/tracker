@@ -6,6 +6,7 @@ Edits by: Johan Edstedt
 import torch
 from torch import nn
 import torchvision.models.resnet as resnet
+from torchvision.models import *
 
 class DeepFeatureExtractor(nn.Module):
     def __init__(self, network_type='resnet50', pretrained=True):
@@ -14,8 +15,19 @@ class DeepFeatureExtractor(nn.Module):
         :param pretrained:
         """
         super().__init__()
-        assert network_type in resnet.__all__ and network_type != "ResNet"
-        backbone = eval(f"resnet.{network_type}(pretrained={pretrained})")
+        assert network_type in resnet.__all__ and network_type != "ResNet", f"{network_type} not supported, try: {resnet.__all__}"
+        if pretrained:
+            if network_type == 'resnet18':
+                weights = ResNet18_Weights.DEFAULT
+            elif network_type == 'resnet34':
+                weights = ResNet34_Weights.DEFAULT
+            elif network_type == 'resnet50':
+                weights = ResNet50_Weights.DEFAULT
+            elif network_type == 'resnet101':
+                weights = ResNet101_Weights.DEFAULT
+        else:
+            weights = None
+        backbone = eval(f"resnet.{network_type}(weights={weights})")
         self.conv1 = backbone.conv1
         self.bn1 = backbone.bn1
         self.relu = backbone.relu
