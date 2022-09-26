@@ -201,7 +201,7 @@ class MOSSERGBtracker:
         self.M = np.divide(self.A, self.lam + self.B)
 
     def detect(self, image):
-        features = self.get_features()
+        features = self.get_features(image)
         sums = 0
         for i in [0,1,2]:
             patch = self.get_normalized_patch(features[i])
@@ -217,9 +217,6 @@ class MOSSERGBtracker:
         # Keep for visualisation
         self.last_response = sums
 
-        #r_offset = np.mod(r + self.region_center[0], self.region.height) - self.region_center[0]
-        #c_offset = np.mod(c + self.region_center[1], self.region.width) - self.region_center[1]
-
         r_offset = r - self.region_center[0]
         c_offset = c - self.region_center[1]
 
@@ -229,8 +226,13 @@ class MOSSERGBtracker:
         return self.get_region()
 
     def update(self, image, lr=0.8):
-        patch = self.get_normalized_patch(image)
-        patchf = fft2(patch)
-        self.A = lr*np.conj(self.C) * patchf+self.A*(1-lr)
-        self.B = lr*np.conj(patchf)*patchf + (1-lr)*self.B
-        self.M = np.divide(self.A, self.B)
+        features = self.get_features(image)
+        B_prev = self.B
+        self.B = 0
+        for i, f in enumerate(features):
+            patch = self.get_normalized_patch(f)
+            X = fft2(patch)
+            self.A[i] = lr*np.conj(self.Y) * X + (1-lr)*self.A[i]
+            self.B += lr*(np.multiply(np.conj(X), (X)))
+        self.B += (1-lr)*B_prev
+        self.M = np.divide(self.A, self.lam + self.B)
