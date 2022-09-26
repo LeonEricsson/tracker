@@ -30,12 +30,12 @@ if __name__ == "__main__":
 
         if SHOW_TRACKING:
             cv2.namedWindow("tracker")
-        tracker = MOSSEtracker()
+        tracker = MOSSERGBtracker()
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']
-            #image = image_color   
-            image = np.sum(image_color, 2) / 3
+            image = image_color   
+            #image = np.sum(image_color, 2) / 3
             if frame_idx == 0:
                 bbox = frame['bounding_box']
                 if bbox.width % 2 == 0:
