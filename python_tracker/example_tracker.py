@@ -35,7 +35,7 @@ if __name__ == "__main__":
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']
             image = image_color   
-            #image = np.sum(image_color, 2) / 3
+            #image = np.sum(image_color, 2) / 3 
             if frame_idx == 0:
                 bbox = frame['bounding_box']
                 if bbox.width % 2 == 0:
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
                 if bbox.height % 2 == 0:
                     bbox.height += 1
-
+                
                 current_position = bbox
                 tracker.start(image, bbox)
                 frame['bounding_box']

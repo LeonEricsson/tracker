@@ -1,7 +1,9 @@
 from pyexpat import features
 from statistics import stdev
+from unittest.mock import patch
 import numpy as np
 from scipy.fftpack import fft2, ifft2, fftshift, ifftshift
+from scipy.signal import convolve2d as conv2d
 from .image_io import crop_patch
 from copy import copy
 import cv2
@@ -89,7 +91,6 @@ class MOSSEtracker:
 
     def start(self, image, region):
         self.region = copy(region)
-        self.region_shape = (region.height, region.width)
         self.region_center = (region.height // 2, region.width // 2)
         patchnormalized = self.get_normalized_patch(image)
         self.template = fft2(patchnormalized)
@@ -151,14 +152,19 @@ class MOSSERGBtracker:
         self.B = None
         self.M = None
         self.C = None
+        self.hann = None
         self.lam = lam
+
+    def get_hanning_window(self):
+        hy = np.hanning(self.region.height)
+        hx = np.hanning(self.region.width)
+        return hy.reshape(hy.shape[0], 1) * hx
     
     def get_region(self):
         return copy(self.region)
 
     def get_normalized_patch(self, image):
-        region = self.region
-        patch = crop_patch(image, region)
+        patch = crop_patch(image, self.region)
         patch = patch / 255
         patch = patch - np.mean(patch)
         patch = patch / np.std(patch)
@@ -172,17 +178,14 @@ class MOSSERGBtracker:
         return features
 
     def start(self, image, region):
-        self.region = copy(region)
-        self.region_shape = (region.height, region.width)
-        self.region_center = (region.height // 2, region.width // 2)
-        #patchnormalized = self.get_normalized_patch(image)
-        #self.template = fft2(patchnormalized)
+        self.region = region.rescale(1.5, True)
+        self.region_center = [region.height // 2, region.width // 2]
+        self.hann = self.get_hanning_window()
 
-        (y0,x0) = self.region_center
-        (x,y) = np.meshgrid(range(region.width), range(region.height))
-        #patch = crop_patch(image, region)
-        #F = fft2(patch)
-        stdev = 5
+        y0, x0 = self.region_center
+        x, y = np.meshgrid(range(self.region.width), range(self.region.height))
+        
+        stdev = 2
         y = np.exp(-((x-x0)**2+(y-y0)**2)/(2*stdev**2))
         self.Y = fft2(y)
         features = self.get_features(image)
@@ -206,11 +209,12 @@ class MOSSERGBtracker:
         for i in [0,1,2]:
             patch = self.get_normalized_patch(features[i])
             
-            patchf = fft2(patch)
-
+            patchf = fft2(patch) #* self.hann
+            
             responsef = np.conj(self.M[i]) * patchf
             response = ifft2(responsef).real
             sums += response
+
 
         r, c = np.unravel_index(np.argmax(sums), sums.shape)
 
@@ -225,7 +229,7 @@ class MOSSERGBtracker:
 
         return self.get_region()
 
-    def update(self, image, lr=0.8):
+    def update(self, image, lr=0.9):
         features = self.get_features(image)
         B_prev = self.B
         self.B = 0
