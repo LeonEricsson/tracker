@@ -164,6 +164,9 @@ class MOSSERGBtracker:
     def get_region(self):
         return copy(self.region)
 
+    def get_bbox(self):# 
+        return copy(self.bbox)
+
     def get_normalized_patch(self, image):
         patch = crop_patch(image, self.region)
         patch = patch / 255
@@ -187,8 +190,8 @@ class MOSSERGBtracker:
         return features
 
     def start(self, image, region):
-        self.bbox = region
-        self.region = region.rescale(1.5, True)
+        self.bbox = copy(region)
+        self.region = region.rescale(2.5, True)
         self.region_center = [self.region.height // 2, self.region.width // 2]
         self.hann = self.get_hanning_window()
 
@@ -236,8 +239,9 @@ class MOSSERGBtracker:
 
         self.region.xpos += c_offset
         self.region.ypos += r_offset
-
-        return self.get_region()
+        self.bbox.xpos += c_offset
+        self.bbox.ypos += r_offset
+        return self.get_bbox()
 
     def update(self, image, lr=0.9):
         features = self.get_features(image)
