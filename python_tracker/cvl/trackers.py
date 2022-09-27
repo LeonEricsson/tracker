@@ -5,6 +5,7 @@ import numpy as np
 from scipy.fftpack import fft2, ifft2, fftshift, ifftshift
 from scipy.signal import convolve2d as conv2d
 from .image_io import crop_patch
+from .features import colornames_image
 from copy import copy
 import cv2
 
@@ -201,12 +202,11 @@ class MOSSERGBtracker:
         stdev = 2
         y = np.exp(-((x-x0)**2+(y-y0)**2)/(2*stdev**2))
         self.Y = fft2(y)
-        features = self.get_features(image)
         
         self.A = []
         self.B = 0
-        for img_color in features:
-            patch = self.get_normalized_patch(img_color)
+        for i in range(image.shape[2]):
+            patch = self.get_normalized_patch(image[:,:,i])
             X = fft2(patch)
             self.A.append(np.multiply(np.conj(self.Y), X))
             self.B += np.multiply(np.conj(X), X)
@@ -217,13 +217,10 @@ class MOSSERGBtracker:
         self.M = np.divide(self.A, self.lam + self.B)
 
     def detect(self, image):
-        features = self.get_features(image)
         sums = 0
-        for i in [0,1,2]:
-            patch = self.get_normalized_patch(features[i])
-            
-            patchf = fft2(patch) #* self.hann
-            #M_pad = np.pad(self.M[i], [(16,), (20,)], mode="constant")
+        for i in range(image.shape[2]):
+            patch = self.get_normalized_patch(image[:,:,i])
+            patchf = fft2(patch)
             responsef = np.conj(self.M[i]) * patchf # Convolution to match filter with image patch
             response = ifft2(responsef).real
             sums += response
@@ -243,14 +240,15 @@ class MOSSERGBtracker:
         self.bbox.ypos += r_offset
         return self.get_bbox()
 
-    def update(self, image, lr=0.9):
-        features = self.get_features(image)
+    def update(self, image, lr=0.5):
         B_prev = self.B
         self.B = 0
-        for i, f in enumerate(features):
-            patch = self.get_normalized_patch(f)
+        i = 0
+        for i in range(image.shape[2]):
+            patch = self.get_normalized_patch(image[:,:,i])
             X = fft2(patch)
             self.A[i] = lr*np.conj(self.Y) * X + (1-lr)*self.A[i]
             self.B += lr*(np.multiply(np.conj(X), (X)))
+            i += 1
         self.B += (1-lr)*B_prev
         self.M = np.divide(self.A, self.lam + self.B)

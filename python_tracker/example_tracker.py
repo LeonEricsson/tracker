@@ -11,12 +11,12 @@ import numpy as np
 from tqdm import tqdm
 from cvl.dataset import OnlineTrackingBenchmark
 from cvl.trackers import MOSSEtracker, NCCTracker, MOSSERGBtracker
-
+from cvl.features import colornames_image
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=[3, 4, 5],type=int)
+    parser.add_argument('--sequences',nargs="+",default=[4],type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
     parser.add_argument('--show_tracking',action='store_true',default=True)
     args = parser.parse_args()
@@ -37,6 +37,7 @@ if __name__ == "__main__":
             image_color = frame['image']   
             image = np.sum(image_color, 2) / 3
             if type(tracker) == MOSSERGBtracker:
+                # image = colornames_image(image_color)
                 image = image_color
             if frame_idx == 0:
                 bbox = frame['bounding_box']
@@ -51,7 +52,7 @@ if __name__ == "__main__":
                 frame['bounding_box']
             else:
                 tracker.detect(image)
-                tracker.update(image, lr = 0.9)
+                tracker.update(image, lr = 0.1)
             pred_bbs.append(tracker.get_region())
             if SHOW_TRACKING:
                 window = tracker.get_region()
