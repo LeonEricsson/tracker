@@ -25,16 +25,17 @@ if __name__ == "__main__":
 
     dataset = OnlineTrackingBenchmark(dataset_path)
     results = []
+
     for sequence_idx in tqdm(sequences):
         a_seq = dataset[sequence_idx]
 
         if SHOW_TRACKING:
             cv2.namedWindow("tracker")
-        tracker = MOSSERGBtracker()
+        tracker = MOSSERGBtracker(lam=0.1)
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']
-            image = image_color   
+            image = image_color
             #image = np.sum(image_color, 2) / 3 
             if frame_idx == 0:
                 bbox = frame['bounding_box']
@@ -49,14 +50,19 @@ if __name__ == "__main__":
                 frame['bounding_box']
             else:
                 tracker.detect(image)
-                tracker.update(image, 0.6)
+                tracker.update(image, lr = 0.9)
             pred_bbs.append(tracker.get_region())
             if SHOW_TRACKING:
-                bbox = tracker.get_region()
-                pt0 = (bbox.xpos, bbox.ypos) 
+                window = tracker.get_region()
+                bbox = tracker.get_bbox()
+                pt0 = (bbox.xpos, bbox.ypos)
                 pt1 = (bbox.xpos + bbox.width, bbox.ypos + bbox.height)
                 image_color = cv2.cvtColor(image_color, cv2.COLOR_RGB2BGR)
                 cv2.rectangle(image_color, pt0, pt1, color=(0, 255, 0), thickness=3)
+                pt0 = (window.xpos, window.ypos)
+                pt1 = (window.xpos + window.width, window.ypos + window.height)
+                image_color = cv2.cvtColor(image_color, cv2.COLOR_RGB2BGR)
+                cv2.rectangle(image_color, pt0, pt1, color=(255, 0, 0), thickness=1)
                 cv2.imshow("tracker", image_color)
                 cv2.waitKey(0)
         sequence_ious = dataset.calculate_per_frame_iou(sequence_idx, pred_bbs)

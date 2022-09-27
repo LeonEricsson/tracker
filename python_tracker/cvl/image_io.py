@@ -9,7 +9,7 @@ def crop_patch(image, region):
         If the region is partially outside the image, zeros will be added at the edge
         If the region is completely outside the image it will crash or missbehave
     """
-
+    
     r0 = region.ypos
     r1 = region.ypos + region.height
     c0 = region.xpos
