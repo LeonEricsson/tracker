@@ -145,6 +145,7 @@ class MOSSERGBtracker:
         self.template = None
         self.last_response = None
         self.region = None
+        self.bbox = None
         self.region_shape = None
         self.region_center = None
         self.learning_rate = learning_rate
@@ -170,6 +171,14 @@ class MOSSERGBtracker:
         patch = patch / np.std(patch)
         return patch
 
+    def get_normalized_bbox(self, image):
+        patch = crop_patch(image, self.bbox)
+        patch = patch / 255
+        patch = patch - np.mean(patch)
+        patch = patch / np.std(patch)
+        return patch
+
+
     def get_features(self, image):
         features = []
         features.append(image[:,:,0])
@@ -178,8 +187,9 @@ class MOSSERGBtracker:
         return features
 
     def start(self, image, region):
+        self.bbox = region
         self.region = region.rescale(1.5, True)
-        self.region_center = [region.height // 2, region.width // 2]
+        self.region_center = [self.region.height // 2, self.region.width // 2]
         self.hann = self.get_hanning_window()
 
         y0, x0 = self.region_center
@@ -210,8 +220,8 @@ class MOSSERGBtracker:
             patch = self.get_normalized_patch(features[i])
             
             patchf = fft2(patch) #* self.hann
-            
-            responsef = np.conj(self.M[i]) * patchf
+            #M_pad = np.pad(self.M[i], [(16,), (20,)], mode="constant")
+            responsef = np.conj(self.M[i]) * patchf # Convolution to match filter with image patch
             response = ifft2(responsef).real
             sums += response
 
