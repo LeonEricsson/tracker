@@ -7,7 +7,9 @@ from scipy.signal import convolve2d as conv2d
 from .image_io import crop_patch
 from copy import copy
 import cv2
-
+import torch
+import matplotlib.pyplot as plt
+from scipy.interpolate import RectBivariateSpline
 
 class NCCTracker:
 
@@ -183,47 +185,95 @@ class MOSSERGBtracker:
         patch = patch / np.std(patch)
         return patch
 
-
-    def get_features(self, image):
-        #deep_features = self.deep_extractor(image)
+    def get_channels(self, image):
         features = []
-        features.append(image[:,:,0])
-        features.append(image[:,:,1])
-        features.append(image[:,:,2])
+        imagepatch1 = self.get_normalized_patch(image[:,:,0])
+        imagepatch2 = self.get_normalized_patch(image[:,:,1])
+        imagepatch3 = self.get_normalized_patch(image[:,:,2])
+        features.append(imagepatch1)
+        features.append(imagepatch2)
+        features.append(imagepatch3)
         return features
+
+    def get_deep_features(self, image):
+        
+        features = []
+
+        imagepatch1 = self.get_normalized_patch(image[:,:,0])
+        imagepatch2 = self.get_normalized_patch(image[:,:,1])
+        imagepatch3 = self.get_normalized_patch(image[:,:,2])
+
+        imagepatch = np.zeros((imagepatch1.shape[0], imagepatch1.shape[1], 3))
+        imagepatch[:,:,0] = imagepatch1
+        imagepatch[:,:,1] = imagepatch2
+        imagepatch[:,:,2] = imagepatch3
+
+        upsampled_imagepatch = cv2.resize(imagepatch, (244,244), interpolation=cv2.INTER_CUBIC)
+
+        deep_features = self.deep_extractor(upsampled_imagepatch)
+
+        for f in deep_features:
+            feature_map = f.squeeze(0)
+            grayscale = torch.sum(feature_map, 0)
+            grayscale = grayscale / feature_map.shape[0]
+            grayscale = grayscale.detach().cpu().numpy()
+            grayscale = cv2.resize(grayscale, (imagepatch.shape[1],imagepatch.shape[0]), interpolation=cv2.INTER_CUBIC)
+            features.append(grayscale)
+            # cv2.imshow("img",grayscale.detach().cpu().numpy())
+            # cv2.waitKey(0)
+            # plt.imshow(upsampled_imagepatch)
+            # plt.show()
+            # plt.imshow(grayscale.detach().cpu().numpy())
+            # plt.show()
+        return features
+
+    def get_gaussian(self, feature):
+        height, width = feature.shape
+        x0, y0 = (height // 2, width // 2)
+        x, y = np.meshgrid(range(width), range(height))
+        stdev = 2
+        y = np.exp(-((x-x0)**2+(y-y0)**2)/(2*stdev**2))
+        return fft2(y)
 
     def start(self, image, region):
         self.bbox = copy(region)
-        self.region = region.rescale(2.5, True)
+        self.region = region.rescale(3, True)
         self.region_center = [self.region.height // 2, self.region.width // 2]
         self.hann = self.get_hanning_window()
-
         y0, x0 = self.region_center
         x, y = np.meshgrid(range(self.region.width), range(self.region.height))
         
         stdev = 2
         y = np.exp(-((x-x0)**2+(y-y0)**2)/(2*stdev**2))
         self.Y = fft2(y)
-        features = self.get_features(image)
+        channels = self.get_channels(image)
+        deep_features = self.get_deep_features(image)
         
         self.A = []
         self.B = 0
-        for img_color in features:
-            patch = self.get_normalized_patch(img_color)
+        for img_color in channels:
+            patch = img_color
             X = fft2(patch)
             self.A.append(np.multiply(np.conj(self.Y), X))
             self.B += np.multiply(np.conj(X), X)
+        
+        for i, deep_f in enumerate(deep_features):
+            X = fft2(deep_f)
+            self.A.append(np.multiply(np.conj(self.Y), X))
+            self.B += np.multiply(np.conj(X), X)
 
-
+        
         self.M = []
         self.A = np.array(self.A)
         self.M = np.divide(self.A, self.lam + self.B)
 
     def detect(self, image):
-        features = self.get_features(image)
+        channels = self.get_channels(image)
+        deep_features = self.get_deep_features(image)
+        features = np.concatenate((channels, deep_features))
         sums = 0
         for i, f in enumerate(features):
-            patch = self.get_normalized_patch(f)
+            patch = f
             
             patchf = fft2(patch) #* self.hann
             #M_pad = np.pad(self.M[i], [(16,), (20,)], mode="constant")
@@ -247,11 +297,15 @@ class MOSSERGBtracker:
         return self.get_bbox()
 
     def update(self, image, lr=0.9):
-        features = self.get_features(image)
+
+        channels = self.get_channels(image)
+        deep_features = self.get_deep_features(image)
+        features = np.concatenate((channels, deep_features))
+
         B_prev = self.B
         self.B = 0
         for i, f in enumerate(features):
-            patch = self.get_normalized_patch(f)
+            patch = f
             X = fft2(patch)
             self.A[i] = lr*np.conj(self.Y) * X + (1-lr)*self.A[i]
             self.B += lr*(np.multiply(np.conj(X), (X)))

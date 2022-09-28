@@ -28,4 +28,5 @@ if __name__ == "__main__":
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']
             deep_features = feature_extractor(image_color)
-            
+            for f in deep_features:
+                fmap = f.squee
