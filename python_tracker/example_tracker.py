@@ -35,9 +35,10 @@ if __name__ == "__main__":
         tracker = MOSSERGBtracker(lam=0.1)#, deep_extractor=feature_extractor)
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
-            image_color = frame['image']
-            image = image_color
-            #image = np.sum(image_color, 2) / 3 
+            image_color = frame['image']   
+            image = np.sum(image_color, 2) / 3
+            if type(tracker) == MOSSERGBtracker:
+                image = image_color
             if frame_idx == 0:
                 bbox = frame['bounding_box']
                 if bbox.width % 2 == 0:
