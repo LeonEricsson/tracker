@@ -8,6 +8,7 @@ from .image_io import crop_patch
 from copy import copy
 import cv2
 
+
 class NCCTracker:
 
     def __init__(self, learning_rate=0.1):
@@ -141,7 +142,7 @@ class MOSSEtracker:
         
 
 class MOSSERGBtracker:
-    def __init__(self, learning_rate=0.1, lam=0.1):
+    def __init__(self, learning_rate=0.1, lam=0.1, deep_extractor = None):
         self.template = None
         self.last_response = None
         self.region = None
@@ -155,6 +156,7 @@ class MOSSERGBtracker:
         self.C = None
         self.hann = None
         self.lam = lam
+        self.deep_extractor = deep_extractor
 
     def get_hanning_window(self):
         hy = np.hanning(self.region.height)
@@ -175,6 +177,7 @@ class MOSSERGBtracker:
         return patch
 
     def get_features(self, image):
+        #deep_features = self.deep_extractor(image)
         features = []
         features.append(image[:,:,0])
         features.append(image[:,:,1])
@@ -211,8 +214,8 @@ class MOSSERGBtracker:
     def detect(self, image):
         features = self.get_features(image)
         sums = 0
-        for i in [0,1,2]:
-            patch = self.get_normalized_patch(features[i])
+        for i, f in enumerate(features):
+            patch = self.get_normalized_patch(f)
             
             patchf = fft2(patch) #* self.hann
             

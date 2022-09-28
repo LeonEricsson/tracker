@@ -12,11 +12,12 @@ from tqdm import tqdm
 from cvl.dataset import OnlineTrackingBenchmark
 from cvl.trackers import MOSSEtracker, NCCTracker, MOSSERGBtracker
 
+from cvl.features_resnet import DeepFeatureExtractor
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=[3, 4, 5],type=int)
+    parser.add_argument('--sequences',nargs="+",default=[1,2,3, 4, 5],type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
     parser.add_argument('--show_tracking',action='store_true',default=True)
     args = parser.parse_args()
@@ -28,10 +29,10 @@ if __name__ == "__main__":
 
     for sequence_idx in tqdm(sequences):
         a_seq = dataset[sequence_idx]
-
+        #feature_extractor = DeepFeatureExtractor()
         if SHOW_TRACKING:
             cv2.namedWindow("tracker")
-        tracker = MOSSERGBtracker(lam=0.1)
+        tracker = MOSSERGBtracker(lam=0.1)#, deep_extractor=feature_extractor)
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']

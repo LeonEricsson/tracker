@@ -46,7 +46,7 @@ class DeepFeatureExtractor(nn.Module):
             self.device = "cuda:0"
         else:
             self.device = "cpu"
-    
+            
     def preprocess(self, im):
         x = (torch.tensor(im).permute(2,0,1)[None].float().to(self.device) / 255.0 - self.mean) / self.std
         return x
