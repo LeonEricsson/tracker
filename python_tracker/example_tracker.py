@@ -16,7 +16,7 @@ from cvl.features import colornames_image
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=[4],type=int)
+    parser.add_argument('--sequences',nargs="+",default=[3,4,5],type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
     parser.add_argument('--show_tracking',action='store_true',default=True)
     args = parser.parse_args()
@@ -37,7 +37,6 @@ if __name__ == "__main__":
             image_color = frame['image']   
             image = np.sum(image_color, 2) / 3
             if type(tracker) == MOSSERGBtracker:
-                # image = colornames_image(image_color)
                 image = image_color
             if frame_idx == 0:
                 bbox = frame['bounding_box']
@@ -63,7 +62,6 @@ if __name__ == "__main__":
                 cv2.rectangle(image_color, pt0, pt1, color=(0, 255, 0), thickness=3)
                 pt0 = (window.xpos, window.ypos)
                 pt1 = (window.xpos + window.width, window.ypos + window.height)
-                image_color = cv2.cvtColor(image_color, cv2.COLOR_RGB2BGR)
                 cv2.rectangle(image_color, pt0, pt1, color=(255, 0, 0), thickness=1)
                 cv2.imshow("tracker", image_color)
                 cv2.waitKey(0)
