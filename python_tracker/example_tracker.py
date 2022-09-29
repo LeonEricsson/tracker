@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
         if SHOW_TRACKING:
             cv2.namedWindow("tracker")
-        tracker = MOSSERGBtracker(lam=0.1)
+        tracker = MOSSERGBtracker()
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']   

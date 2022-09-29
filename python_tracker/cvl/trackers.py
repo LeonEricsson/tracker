@@ -2,7 +2,7 @@ from pyexpat import features
 from statistics import stdev
 from unittest.mock import patch
 import numpy as np
-from scipy.fftpack import fft2, ifft2, fftshift, ifftshift
+from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy.signal import convolve2d as conv2d
 from skimage.feature import hog 
 from .image_io import crop_patch, crop_patch3d
@@ -193,10 +193,7 @@ class MOSSERGBtracker:
 
     def hog_features(self, image):
         patch = self.get_normalized_patch3d(image)
-        fd, hog_image = hog(patch, pixels_per_cell=(8,8), cells_per_block=(1,1), feature_vector=False, visualize=True, channel_axis=-1)
-        # plt.axis("off")
-        # plt.imshow(hog_image, cmap="gray")
-        # plt.show()
+        fd, hog_image = hog(patch, pixels_per_cell=(8,8), cells_per_block=(3,3), feature_vector=False, visualize=True, channel_axis=-1)
         return fd.reshape(fd.shape[0], fd.shape[1], -1)
 
     def get_features(self, image):
