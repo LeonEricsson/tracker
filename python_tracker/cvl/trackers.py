@@ -237,13 +237,13 @@ class MOSSERGBtracker:
 
         # plt.imshow(features[0])
         # plt.show()
-        return features
+        return [features[0]]
 
     def get_all_features(self, image):
         channels = self.get_channels(image)
         deep_features = self.get_deep_features(image)
         features = np.concatenate((channels, deep_features))
-        return deep_features
+        return features
 
     def get_gaussian(self, feature):
         height, width = feature.shape
