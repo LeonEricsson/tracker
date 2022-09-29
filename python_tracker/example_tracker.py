@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from tqdm import tqdm
 from cvl.dataset import OnlineTrackingBenchmark
-from cvl.trackers import MOSSEtracker, NCCTracker, MOSSERGBtracker
+from cvl.trackers import MOSSEtracker, NCCTracker, MOSSERGBDFtracker
 
 from cvl.features_resnet import DeepFeatureExtractor
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']   
             image = np.sum(image_color, 2) / 3
-            if type(tracker) == MOSSERGBtracker:
+            if type(tracker) == MOSSERGBDFtracker:
                 image = image_color
             if frame_idx == 0:
                 bbox = frame['bounding_box']
