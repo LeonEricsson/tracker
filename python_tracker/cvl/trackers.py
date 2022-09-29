@@ -2,7 +2,7 @@ from pyexpat import features
 from statistics import stdev
 from unittest.mock import patch
 import numpy as np
-from scipy.fftpack import fft2, ifft2, fftshift, ifftshift
+from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy.signal import convolve2d as conv2d
 from .image_io import crop_patch
 from copy import copy
