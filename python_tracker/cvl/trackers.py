@@ -237,7 +237,7 @@ class MOSSERGBDFtracker:
 
         # plt.imshow(features[0])
         # plt.show()
-        return [features[0]]
+        return features
 
     def get_all_features(self, image):
         channels = self.get_channels(image)
@@ -255,7 +255,7 @@ class MOSSERGBDFtracker:
 
     def start(self, image, region):
         self.bbox = copy(region)
-        self.region = region.rescale(3, True)
+        self.region = region.rescale(2.5, True)
         self.region_center = [self.region.height // 2, self.region.width // 2]
         self.hann = self.get_hanning_window()
         y0, x0 = self.region_center
@@ -290,7 +290,6 @@ class MOSSERGBDFtracker:
             responsef = np.conj(self.M[i]) * patchf # Convolution to match filter with image patch
             response = ifft2(responsef).real
             sums += response
-
 
         r, c = np.unravel_index(np.argmax(sums), sums.shape)
 
