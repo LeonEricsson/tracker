@@ -34,7 +34,7 @@ if __name__ == "__main__":
         feature_extractor = DeepFeatureExtractor()
         if SHOW_TRACKING:
             cv2.namedWindow("tracker")
-        tracker = MOSSERGBtracker(lam=0.1, deep_extractor=feature_extractor)
+        tracker = MOSSERGBDFtracker(lam=0.1, deep_extractor=feature_extractor)
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']   

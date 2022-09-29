@@ -143,7 +143,7 @@ class MOSSEtracker:
         self.M = np.divide(self.A, self.B)
         
 
-class MOSSERGBtracker:
+class MOSSERGBDFtracker:
     def __init__(self, learning_rate=0.1, lam=0.1, deep_extractor = None):
         self.template = None
         self.last_response = None
