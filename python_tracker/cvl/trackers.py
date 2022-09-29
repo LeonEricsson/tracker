@@ -208,24 +208,42 @@ class MOSSERGBtracker:
         imagepatch[:,:,1] = imagepatch2
         imagepatch[:,:,2] = imagepatch3
 
-        upsampled_imagepatch = cv2.resize(imagepatch, (244,244), interpolation=cv2.INTER_CUBIC)
+        #upsampled_imagepatch = cv2.resize(imagepatch, (244,244), interpolation=cv2.INTER_CUBIC)
 
-        deep_features = self.deep_extractor(upsampled_imagepatch)
+        deep_features = self.deep_extractor(image)
 
         for f in deep_features:
             feature_map = f.squeeze(0)
             grayscale = torch.sum(feature_map, 0)
             grayscale = grayscale / feature_map.shape[0]
             grayscale = grayscale.detach().cpu().numpy()
-            grayscale = cv2.resize(grayscale, (imagepatch.shape[1],imagepatch.shape[0]), interpolation=cv2.INTER_CUBIC)
+            grayscale = cv2.resize(grayscale, (image.shape[1],image.shape[0]), interpolation=cv2.INTER_CUBIC)
+            grayscale = self.get_normalized_patch(grayscale)
             features.append(grayscale)
             # cv2.imshow("img",grayscale.detach().cpu().numpy())
             # cv2.waitKey(0)
             # plt.imshow(upsampled_imagepatch)
             # plt.show()
-            # plt.imshow(grayscale.detach().cpu().numpy())
-            # plt.show()
+        # fig = plt.figure()
+        # fig.add_subplot(1,4,1)
+        # plt.imshow(features[0])
+        # fig.add_subplot(1,4,2)
+        # plt.imshow(features[1])
+        # fig.add_subplot(1,4,3)
+        # plt.imshow(features[2])
+        # fig.add_subplot(1,4,4)
+        # plt.imshow(features[3])
+        # plt.show()
+
+        # plt.imshow(features[0])
+        # plt.show()
         return features
+
+    def get_all_features(self, image):
+        channels = self.get_channels(image)
+        deep_features = self.get_deep_features(image)
+        features = np.concatenate((channels, deep_features))
+        return deep_features
 
     def get_gaussian(self, feature):
         height, width = feature.shape
@@ -246,19 +264,13 @@ class MOSSERGBtracker:
         stdev = 2
         y = np.exp(-((x-x0)**2+(y-y0)**2)/(2*stdev**2))
         self.Y = fft2(y)
-        channels = self.get_channels(image)
-        deep_features = self.get_deep_features(image)
+        features = self.get_all_features(image)
         
         self.A = []
         self.B = 0
-        for img_color in channels:
-            patch = img_color
-            X = fft2(patch)
-            self.A.append(np.multiply(np.conj(self.Y), X))
-            self.B += np.multiply(np.conj(X), X)
         
-        for i, deep_f in enumerate(deep_features):
-            X = fft2(deep_f)
+        for i, f in enumerate(features):
+            X = fft2(f)
             self.A.append(np.multiply(np.conj(self.Y), X))
             self.B += np.multiply(np.conj(X), X)
 
@@ -268,9 +280,7 @@ class MOSSERGBtracker:
         self.M = np.divide(self.A, self.lam + self.B)
 
     def detect(self, image):
-        channels = self.get_channels(image)
-        deep_features = self.get_deep_features(image)
-        features = np.concatenate((channels, deep_features))
+        features = self.get_all_features(image)
         sums = 0
         for i, f in enumerate(features):
             patch = f
@@ -294,13 +304,21 @@ class MOSSERGBtracker:
         self.region.ypos += r_offset
         self.bbox.xpos += c_offset
         self.bbox.ypos += r_offset
+
+        if (self.bbox.xpos < 0 or self.bbox.xpos + self.bbox.width > image.shape[1] ):
+            self.region.xpos -= c_offset
+            self.bbox.xpos -= c_offset
+
+        if (self.bbox.ypos < 0 or self.bbox.ypos + self.bbox.height > image.shape[0] ):
+            self.region.ypos -= r_offset
+            self.bbox.ypos -= r_offset
+            
+        
         return self.get_bbox()
 
     def update(self, image, lr=0.9):
 
-        channels = self.get_channels(image)
-        deep_features = self.get_deep_features(image)
-        features = np.concatenate((channels, deep_features))
+        features = self.get_all_features(image)
 
         B_prev = self.B
         self.B = 0
