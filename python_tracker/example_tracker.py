@@ -16,8 +16,10 @@ from cvl.features_resnet import DeepFeatureExtractor
 
 
 if __name__ == "__main__":
+    train = [1,2,3,4,5]
+    test = [19,13,14,29,9,15,17,7,23]
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=[1,2,3,4,5],type=int)
+    parser.add_argument('--sequences',nargs="+",default=test,type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
     parser.add_argument('--show_tracking',action='store_true',default=True)
     args = parser.parse_args()
