@@ -16,7 +16,7 @@ from cvl.features import colornames_image
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=[3,4,5],type=int)
+    parser.add_argument('--sequences',nargs="+",default=[6],type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
     parser.add_argument('--show_tracking',action='store_true',default=True)
     args = parser.parse_args()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
                 pt1 = (window.xpos + window.width, window.ypos + window.height)
                 cv2.rectangle(image_color, pt0, pt1, color=(255, 0, 0), thickness=1)
                 cv2.imshow("tracker", image_color)
-                cv2.waitKey(0)
+                cv2.waitKey(1)
         sequence_ious = dataset.calculate_per_frame_iou(sequence_idx, pred_bbs)
         results.append(sequence_ious)
     overlap_thresholds, success_rate = dataset.success_rate(results)

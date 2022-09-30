@@ -215,16 +215,13 @@ class MOSSERGBtracker:
         stdev = 2
         y = np.exp(-((x-x0)**2+(y-y0)**2)/(2*stdev**2))
         self.Y = fft2(y)
-        
-        #image = colornames_image(image, mode='probability') 
-        
+                
         self.A = []
         self.B = 0
        
         fd = self.hog_features(image)
 
         for i in range(fd.shape[2]):
-            #patch = self.get_normalized_patch(image[:,:,i])
             feature = cv2.resize(fd[:,:,i], (self.region.width, self.region.height))
             X = fft2(feature)
             self.A.append(np.multiply(np.conj(self.Y), X))
@@ -237,17 +234,14 @@ class MOSSERGBtracker:
 
     def detect(self, image):
         sums = 0
-        #image = colornames_image(image, mode='probability')
         fd = self.hog_features(image)
 
         for i in range(fd.shape[2]):
-            #patch = self.get_normalized_patch(image[:,:,i])
             feature = cv2.resize(fd[:,:,i], (self.region.width, self.region.height))
             patchf = fft2(feature)
             responsef = np.conj(self.M[i]) * patchf # Convolution to match filter with image patch
             response = ifft2(responsef).real
             sums += response
-
 
         r, c = np.unravel_index(np.argmax(sums), sums.shape)
 
@@ -264,12 +258,10 @@ class MOSSERGBtracker:
         return self.get_bbox()
 
     def update(self, image, lr=0.5):
-        #image = colornames_image(image, mode='probability') 
         fd = self.hog_features(image)
         B_prev = self.B
         self.B = 0
         for i in range(fd.shape[2]):
-            #patch = self.get_normalized_patch(image[:,:,i])
             feature = cv2.resize(fd[:,:,i], (self.region.width, self.region.height))
             X = fft2(feature)
             self.A[i] = lr*np.conj(self.Y) * X + (1-lr)*self.A[i]
