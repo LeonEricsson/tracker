@@ -180,8 +180,8 @@ class MOSSERGBtracker:
     def get_normalized_patch3d(self, image):
         patch = crop_patch3d(image, self.region)
         patch = patch / 255
-        patch = patch - np.mean(patch)
-        patch = patch / np.std(patch)
+        patch -= np.mean(patch, axis=(0,1), keepdims=True)  
+        patch /= np.std(patch, axis=(0,1), keepdims=True)
         return patch
 
     def get_normalized_bbox(self, image):
