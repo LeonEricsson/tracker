@@ -144,20 +144,21 @@ class MOSSEtracker:
         
 
 class MOSSERGBtracker:
-    def __init__(self, learning_rate=0.1, lam=0.1):
+    def __init__(self, lr=0.1, lam=0.1):
         self.template = None
         self.last_response = None
         self.region = None
         self.bbox = None
         self.region_shape = None
         self.region_center = None
-        self.learning_rate = learning_rate
+        self.lr = lr
         self.A = None
         self.B = None
         self.M = None
         self.C = None
         self.hann = None
         self.lam = lam
+        self.fd = None
 
     def get_hanning_window(self):
         hy = np.hanning(self.region.height)
@@ -235,6 +236,7 @@ class MOSSERGBtracker:
     def detect(self, image):
         sums = 0
         fd = self.hog_features(image)
+        self.fd = fd
 
         for i in range(fd.shape[2]):
             feature = cv2.resize(fd[:,:,i], (self.region.width, self.region.height))
@@ -257,15 +259,15 @@ class MOSSERGBtracker:
         self.bbox.ypos += r_offset
         return self.get_bbox()
 
-    def update(self, image, lr=0.5):
-        fd = self.hog_features(image)
+    def update(self):
+        fd = self.fd
         B_prev = self.B
         self.B = 0
         for i in range(fd.shape[2]):
             feature = cv2.resize(fd[:,:,i], (self.region.width, self.region.height))
             X = fft2(feature)
-            self.A[i] = lr*np.conj(self.Y) * X + (1-lr)*self.A[i]
-            self.B += lr*(np.multiply(np.conj(X), (X)))
+            self.A[i] = self.lr*np.conj(self.Y) * X + (1-self.lr)*self.A[i]
+            self.B += self.lr*(np.multiply(np.conj(X), (X)))
             i += 1
-        self.B += (1-lr)*B_prev
+        self.B += (1-self.lr)*B_prev
         self.M = np.divide(self.A, self.lam + self.B)
