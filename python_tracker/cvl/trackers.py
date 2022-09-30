@@ -144,7 +144,7 @@ class MOSSEtracker:
         
 
 class MOSSERGBtracker:
-    def __init__(self, lr=0.1, lam=0.1):
+    def __init__(self, lr=0.8, lam=0.1):
         self.template = None
         self.last_response = None
         self.region = None
@@ -257,6 +257,16 @@ class MOSSERGBtracker:
         self.region.ypos += r_offset
         self.bbox.xpos += c_offset
         self.bbox.ypos += r_offset
+
+        if (self.bbox.xpos < 0 or self.bbox.xpos + self.bbox.width > image.shape[1] ):
+            self.region.xpos -= c_offset
+            self.bbox.xpos -= c_offset
+
+        if (self.bbox.ypos < 0 or self.bbox.ypos + self.bbox.height > image.shape[0] ):
+            self.region.ypos -= r_offset
+            self.bbox.ypos -= r_offset
+
+
         return self.get_bbox()
 
     def update(self):
