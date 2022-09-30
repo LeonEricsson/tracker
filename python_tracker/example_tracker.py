@@ -15,10 +15,11 @@ from cvl.features import colornames_image
 
 
 if __name__ == "__main__":
+    tuning = [1,2,3,4,5]
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=[6],type=int)
+    parser.add_argument('--sequences',nargs="+",default=tuning,type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
-    parser.add_argument('--show_tracking',action='store_true',default=True)
+    parser.add_argument('--show_tracking',action='store_true',default=False)
     args = parser.parse_args()
 
     dataset_path,SHOW_TRACKING,sequences = args.dataset_path,args.show_tracking,args.sequences
@@ -51,8 +52,8 @@ if __name__ == "__main__":
                 frame['bounding_box']
             else:
                 tracker.detect(image)
-                tracker.update(image, lr = 0.1)
-            pred_bbs.append(tracker.get_region())
+                tracker.update()
+            pred_bbs.append(tracker.get_bbox())
             if SHOW_TRACKING:
                 window = tracker.get_region()
                 bbox = tracker.get_bbox()

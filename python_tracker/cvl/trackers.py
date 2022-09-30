@@ -144,20 +144,21 @@ class MOSSEtracker:
         
 
 class MOSSERGBtracker:
-    def __init__(self, learning_rate=0.1, lam=0.1):
+    def __init__(self, lr=0.1, lam=0.1):
         self.template = None
         self.last_response = None
         self.region = None
         self.bbox = None
         self.region_shape = None
         self.region_center = None
-        self.learning_rate = learning_rate
+        self.lr = lr
         self.A = None
         self.B = None
         self.M = None
         self.C = None
         self.hann = None
         self.lam = lam
+        self.features = None
 
     def get_hanning_window(self):
         hy = np.hanning(self.region.height)
@@ -254,10 +255,10 @@ class MOSSERGBtracker:
 
     def detect(self, image):
         sums = 0
-        features = self.hog_cn_features(image)
+        self.features = self.hog_cn_features(image)
 
-        for i in range(features.shape[2]):
-            patchf = fft2(features[:,:,i])
+        for i in range(self.features.shape[2]):
+            patchf = fft2(self.features[:,:,i])
             responsef = np.conj(self.M[i]) * patchf # Convolution to match filter with image patch
             response = ifft2(responsef).real
             sums += response
@@ -274,16 +275,25 @@ class MOSSERGBtracker:
         self.region.ypos += r_offset
         self.bbox.xpos += c_offset
         self.bbox.ypos += r_offset
+
+        if (self.bbox.xpos < 0 or self.bbox.xpos + self.bbox.width > image.shape[1] ):
+            self.region.xpos -= c_offset
+            self.bbox.xpos -= c_offset
+
+        if (self.bbox.ypos < 0 or self.bbox.ypos + self.bbox.height > image.shape[0] ):
+            self.region.ypos -= r_offset
+            self.bbox.ypos -= r_offset
+
+
         return self.get_bbox()
 
-    def update(self, image, lr=0.5):
-        features = self.hog_cn_features(image)
+    def update(self):
         B_prev = self.B
         self.B = 0
-        for i in range(features.shape[2]):
-            X = fft2(features[:,:,i])
-            self.A[i] = lr*np.conj(self.Y) * X + (1-lr)*self.A[i]
-            self.B += lr*(np.multiply(np.conj(X), (X)))
+        for i in range(self.features.shape[2]):
+            X = fft2(self.features[:,:,i])
+            self.A[i] = self.lr*np.conj(self.Y) * X + (1-self.lr)*self.A[i]
+            self.B += self.lr*(np.multiply(np.conj(X), (X)))
             i += 1
-        self.B += (1-lr)*B_prev
+        self.B += (1-self.lr)*B_prev
         self.M = np.divide(self.A, self.lam + self.B)
