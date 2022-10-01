@@ -14,12 +14,13 @@ from cvl.trackers import MOSSEtracker, NCCTracker, MOSSERGBDFtracker
 
 from cvl.features_resnet import DeepFeatureExtractor
 
+PER_SEQ = True
 
 if __name__ == "__main__":
-    train = [1,2,3,4,5]
-    test = [19,13,14,29,9,15,17,7,23]
+    train = [2,3]#,4,5,6]
+    test = [8, 10, 14,15, 16, 18, 20, 24, 30]
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=test,type=int)
+    parser.add_argument('--sequences',nargs="+",default=train,type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
     parser.add_argument('--show_tracking',action='store_true',default=True)
     args = parser.parse_args()
@@ -70,6 +71,13 @@ if __name__ == "__main__":
                 cv2.waitKey(1)
         sequence_ious = dataset.calculate_per_frame_iou(sequence_idx, pred_bbs)
         results.append(sequence_ious)
-    overlap_thresholds, success_rate = dataset.success_rate(results)
-    auc = dataset.auc(success_rate)
-    print(f'Tracker AUC: {auc}')
+
+    if PER_SEQ:
+        for i in range(len(results)):
+            overlap_thresholds, success_rate = dataset.success_rate(results[i])
+            auc = dataset.auc(success_rate)
+            print(f'Tracker AUC: {auc} on seq. {train[i]}')
+    else:
+        overlap_thresholds, success_rate = dataset.success_rate(results)
+        auc = dataset.auc(success_rate)
+        print(f'Tracker AUC: {auc}')
