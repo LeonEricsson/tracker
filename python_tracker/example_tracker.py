@@ -15,10 +15,12 @@ from cvl.trackers import MOSSEtracker, NCCTracker, MOSSERGBtracker
 
 
 if __name__ == "__main__":
+    tuning = [1,2,3,4,5]
+    test = [9, 15, 24, 17, 6, 12, 20, 19, 27]
     parser = argparse.ArgumentParser('Args for the tracker')
-    parser.add_argument('--sequences',nargs="+",default=[3, 4, 5],type=int)
+    parser.add_argument('--sequences',nargs="+",default=test,type=int)
     parser.add_argument('--dataset_path',type=str,default="/courses/TSBB19/otb_mini")
-    parser.add_argument('--show_tracking',action='store_true',default=True)
+    parser.add_argument('--show_tracking',action='store_true',default=False)
     args = parser.parse_args()
 
     dataset_path,SHOW_TRACKING,sequences = args.dataset_path,args.show_tracking,args.sequences
@@ -31,7 +33,7 @@ if __name__ == "__main__":
 
         if SHOW_TRACKING:
             cv2.namedWindow("tracker")
-        tracker = MOSSERGBtracker(lam=0.1)
+        tracker = MOSSERGBtracker()
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']   
@@ -51,7 +53,7 @@ if __name__ == "__main__":
                 frame['bounding_box']
             else:
                 tracker.detect(image)
-                tracker.update(image, lr = 0.9)
+                tracker.update(image)
             pred_bbs.append(tracker.get_region())
             if SHOW_TRACKING:
                 window = tracker.get_region()
@@ -62,7 +64,6 @@ if __name__ == "__main__":
                 cv2.rectangle(image_color, pt0, pt1, color=(0, 255, 0), thickness=3)
                 pt0 = (window.xpos, window.ypos)
                 pt1 = (window.xpos + window.width, window.ypos + window.height)
-                image_color = cv2.cvtColor(image_color, cv2.COLOR_RGB2BGR)
                 cv2.rectangle(image_color, pt0, pt1, color=(255, 0, 0), thickness=1)
                 cv2.imshow("tracker", image_color)
                 cv2.waitKey(0)

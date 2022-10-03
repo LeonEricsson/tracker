@@ -141,14 +141,14 @@ class MOSSEtracker:
         
 
 class MOSSERGBtracker:
-    def __init__(self, learning_rate=0.1, lam=0.1):
+    def __init__(self, learning_rate=0.5, lam=0.1):
         self.template = None
         self.last_response = None
         self.region = None
         self.bbox = None
         self.region_shape = None
         self.region_center = None
-        self.learning_rate = learning_rate
+        self.lr = learning_rate
         self.A = None
         self.B = None
         self.M = None
@@ -223,7 +223,6 @@ class MOSSERGBtracker:
             patch = self.get_normalized_patch(features[i])
             
             patchf = fft2(patch) #* self.hann
-            #M_pad = np.pad(self.M[i], [(16,), (20,)], mode="constant")
             responsef = np.conj(self.M[i]) * patchf # Convolution to match filter with image patch
             response = ifft2(responsef).real
             sums += response
@@ -241,16 +240,25 @@ class MOSSERGBtracker:
         self.region.ypos += r_offset
         self.bbox.xpos += c_offset
         self.bbox.ypos += r_offset
+
+        if (self.bbox.xpos < 0 or self.bbox.xpos + self.bbox.width > image.shape[1] ):
+            self.region.xpos -= c_offset
+            self.bbox.xpos -= c_offset
+
+        if (self.bbox.ypos < 0 or self.bbox.ypos + self.bbox.height > image.shape[0] ):
+            self.region.ypos -= r_offset
+            self.bbox.ypos -= r_offset
+
         return self.get_bbox()
 
-    def update(self, image, lr=0.9):
+    def update(self, image):
         features = self.get_features(image)
         B_prev = self.B
         self.B = 0
         for i, f in enumerate(features):
             patch = self.get_normalized_patch(f)
             X = fft2(patch)
-            self.A[i] = lr*np.conj(self.Y) * X + (1-lr)*self.A[i]
-            self.B += lr*(np.multiply(np.conj(X), (X)))
-        self.B += (1-lr)*B_prev
+            self.A[i] = self.lr*np.conj(self.Y) * X + (1-self.lr)*self.A[i]
+            self.B += self.lr*(np.multiply(np.conj(X), (X)))
+        self.B += (1-self.lr)*B_prev
         self.M = np.divide(self.A, self.lam + self.B)
