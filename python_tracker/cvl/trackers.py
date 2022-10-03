@@ -144,7 +144,7 @@ class MOSSEtracker:
         
 
 class MOSSERGBtracker:
-    def __init__(self, lr=0.8, lam=0.1):
+    def __init__(self, lr=0.5, lam=0.1):
         self.template = None
         self.last_response = None
         self.region = None
