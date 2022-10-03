@@ -33,7 +33,11 @@ if __name__ == "__main__":
 
         if SHOW_TRACKING:
             cv2.namedWindow("tracker")
+<<<<<<< HEAD
         tracker = MOSSEtracker()
+=======
+        tracker = MOSSERGBtracker()
+>>>>>>> bbaee0f8854d779ed6e9b1772887cb0710633734
         pred_bbs = []
         for frame_idx, frame in tqdm(enumerate(a_seq), leave=False):
             image_color = frame['image']   
@@ -54,7 +58,11 @@ if __name__ == "__main__":
             else:
                 tracker.detect(image)
                 tracker.update(image)
+<<<<<<< HEAD
             pred_bbs.append(tracker.get_bbox())
+=======
+            pred_bbs.append(tracker.get_region())
+>>>>>>> bbaee0f8854d779ed6e9b1772887cb0710633734
             if SHOW_TRACKING:
                 window = tracker.get_region()
                 bbox = tracker.get_bbox()
@@ -64,7 +72,6 @@ if __name__ == "__main__":
                 cv2.rectangle(image_color, pt0, pt1, color=(0, 255, 0), thickness=3)
                 pt0 = (window.xpos, window.ypos)
                 pt1 = (window.xpos + window.width, window.ypos + window.height)
-                image_color = cv2.cvtColor(image_color, cv2.COLOR_RGB2BGR)
                 cv2.rectangle(image_color, pt0, pt1, color=(255, 0, 0), thickness=1)
                 cv2.imshow("tracker", image_color)
                 cv2.waitKey(1)
