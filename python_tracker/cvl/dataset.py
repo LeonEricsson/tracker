@@ -84,7 +84,7 @@ class BoundingBox(object):
         h = s * (y2 - y1)
 
         self.xpos = x1
-        self.ypos = y2
+        self.ypos = y1
 
         self.width = w
         self.height = h

@@ -66,7 +66,7 @@ class NCCTracker:
         self.template = self.template * (1 - lr) + patchf * lr
 
 class MOSSEtracker:
-    def __init__(self, learning_rate=0.8):
+    def __init__(self, learning_rate=0.5):
         self.template = None
         self.last_response = None
         self.region = None
@@ -95,14 +95,14 @@ class MOSSEtracker:
 
     def start(self, image, region):
         self.bbox = copy(region)
-        self.region = region.rescale(1, True)
+        self.region = region.rescale(2.5, True)
         self.region_center = (self.region.height // 2, self.region.width // 2)
 
         (y0,x0) = self.region_center
         (x,y) = np.meshgrid(range(self.region.width), range(self.region.height))
         patch = self.get_normalized_patch(image)
         F = fft2(patch)
-        stdev = 5
+        stdev = 2
         c = np.exp(-((x-x0)**2+(y-y0)**2)/(2*stdev**2))
         self.C = fft2(c)
 
