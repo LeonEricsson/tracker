@@ -40,7 +40,7 @@ def crop_patch(image, region):
     if c1 >= image.shape[1]:
         ci1 = image.shape[1]
         cp1 = region.width - (c1 - image.shape[1])
-
+    
     patch = np.zeros(shape=(region.height, region.width),
                      dtype=image.dtype)
 

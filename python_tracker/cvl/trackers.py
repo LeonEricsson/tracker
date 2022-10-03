@@ -2,7 +2,7 @@ from pyexpat import features
 from statistics import stdev
 from unittest.mock import patch
 import numpy as np
-from scipy.fftpack import fft2, ifft2, fftshift, ifftshift
+from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from scipy.signal import convolve2d as conv2d
 from .image_io import crop_patch
 from copy import copy
@@ -66,13 +66,14 @@ class NCCTracker:
         self.template = self.template * (1 - lr) + patchf * lr
 
 class MOSSEtracker:
-    def __init__(self, learning_rate=0.1):
+    def __init__(self, learning_rate=0.8):
         self.template = None
         self.last_response = None
         self.region = None
+        self.bbox = None
         self.region_shape = None
         self.region_center = None
-        self.learning_rate = learning_rate
+        self.lr = learning_rate
         self.A = None
         self.B = None
         self.M = None
@@ -80,6 +81,9 @@ class MOSSEtracker:
     
     def get_region(self):
         return copy(self.region)
+    
+    def get_bbox(self):
+        return copy(self.bbox)
 
     def get_normalized_patch(self, image):
         region = self.region
@@ -90,13 +94,12 @@ class MOSSEtracker:
         return patch
 
     def start(self, image, region):
-        self.region = copy(region)
-        self.region_center = (region.height // 2, region.width // 2)
-        patchnormalized = self.get_normalized_patch(image)
-        self.template = fft2(patchnormalized)
+        self.bbox = copy(region)
+        self.region = region.rescale(1, True)
+        self.region_center = (self.region.height // 2, self.region.width // 2)
 
         (y0,x0) = self.region_center
-        (x,y) = np.meshgrid(range(region.width), range(region.height))
+        (x,y) = np.meshgrid(range(self.region.width), range(self.region.height))
         patch = self.get_normalized_patch(image)
         F = fft2(patch)
         stdev = 5
@@ -126,17 +129,29 @@ class MOSSEtracker:
 
         r_offset = r - self.region_center[0]
         c_offset = c - self.region_center[1]
-
+    
         self.region.xpos += c_offset
         self.region.ypos += r_offset
+        self.bbox.xpos += c_offset
+        self.bbox.ypos += r_offset
 
-        return self.get_region()
+        if (self.bbox.xpos < 0 or self.bbox.xpos + self.bbox.width > image.shape[1] ):
+            self.region.xpos -= c_offset
+            self.bbox.xpos -= c_offset
 
-    def update(self, image, lr=0.8):
+        if (self.bbox.ypos < 0 or self.bbox.ypos + self.bbox.height > image.shape[0] ):
+            self.region.ypos -= r_offset
+            self.bbox.ypos -= r_offset
+            
+        
+        return self.get_bbox()
+
+
+    def update(self, image):
         patch = self.get_normalized_patch(image)
         patchf = fft2(patch)
-        self.A = lr*np.conj(self.C) * patchf+self.A*(1-lr)
-        self.B = lr*np.conj(patchf)*patchf + (1-lr)*self.B
+        self.A = self.lr*np.conj(self.C) * patchf+self.A*(1-self.lr)
+        self.B = self.lr*np.conj(patchf)*patchf + (1-self.lr)*self.B
         self.M = np.divide(self.A, self.B)
         
 

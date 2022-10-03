@@ -49,7 +49,7 @@ class BoundingBox(object):
 
     def get_center(self):
         cx = self.xpos + self.width/2
-        cy = self.ypos + self.width/2
+        cy = self.ypos + self.height/2
 
         return cx, cy
 
