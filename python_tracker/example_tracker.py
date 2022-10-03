@@ -17,7 +17,7 @@ from cvl.features_resnet import DeepFeatureExtractor
 PER_SEQ = True
 
 if __name__ == "__main__":
-    train = [2,3]#,4,5,6]
+    train = [3]#,4,5,6]
     test = [8, 10, 14,15, 16, 18, 20, 24, 30]
     parser = argparse.ArgumentParser('Args for the tracker')
     parser.add_argument('--sequences',nargs="+",default=train,type=int)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 pt1 = (window.xpos + window.width, window.ypos + window.height)
                 cv2.rectangle(image_color, pt0, pt1, color=(255, 0, 0), thickness=1)
                 cv2.imshow("tracker", image_color)
-                cv2.waitKey(1)
+                cv2.waitKey(0)
         sequence_ious = dataset.calculate_per_frame_iou(sequence_idx, pred_bbs)
         results.append(sequence_ious)
 

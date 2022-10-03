@@ -255,7 +255,7 @@ class MOSSERGBDFtracker:
 
     def start(self, image, region):
         self.bbox = copy(region)
-        self.region = region.rescale(2.5, True)
+        self.region = region.rescale(2, True)
         self.region_center = [self.region.height // 2, self.region.width // 2]
         self.hann = self.get_hanning_window()
         y0, x0 = self.region_center
